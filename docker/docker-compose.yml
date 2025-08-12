@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: bitnami/kafka:3.6
+    ports:
+      - "29092:29092"  # Внешнее подключение: localhost:29092
+    environment:
+      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+
+      # Автоматическое создание топика orders
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "orders:1:1"
+
+    volumes:
+      - kafka_data:/bitnami/kafka
+
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka:9092 --list | grep -q orders || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  kafka_data:
+  redis_data:

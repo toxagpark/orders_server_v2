@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали заказа {{.OrderUID}}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 { color: #2c3e50; }
+        .section {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:hover { background-color: #f5f5f5; }
+        .badge {
+            display: inline-block;
+            padding: 3px 7px;
+            border-radius: 3px;
+            background: #e74c3c;
+            color: white;
+            font-size: 12px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<h1>Детали заказа #{{.OrderUID}}</h1>
+
+<div class="section">
+    <h2>Основная информация</h2>
+    <p><strong>Трек-номер:</strong> {{.TrackNumber}}</p>
+    <p><strong>Дата создания:</strong> {{.DateCreated}}</p>
+    <p><strong>Сервис доставки:</strong> {{.DeliveryService}}</p>
+</div>
+
+<div class="section">
+    <h2>Данные доставки</h2>
+    <p><strong>Получатель:</strong> {{.Delivery.Name}}</p>
+    <p><strong>Адрес:</strong> {{.Delivery.City}}, {{.Delivery.Address}}, {{.Delivery.Zip}}</p>
+    <p><strong>Регион:</strong> {{.Delivery.Region}}</p>
+    <p><strong>Телефон:</strong> {{.Delivery.Phone}}</p>
+    <p><strong>Email:</strong> {{.Delivery.Email}}</p>
+</div>
+
+<div class="section">
+    <h2>Платежная информация</h2>
+    <p><strong>Сумма:</strong> {{.Payment.Amount}} {{.Payment.Currency}}</p>
+    <p><strong>Банк:</strong> {{.Payment.Bank}}</p>
+    <p><strong>Способ оплаты:</strong> {{.Payment.Provider}}</p>
+    <p><strong>Дата платежа:</strong> {{.Payment.PaymentDT}}</p>
+</div>
+
+<div class="section">
+    <h2>Товары ({{len .Items}})</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Название</th>
+            <th>Бренд</th>
+            <th>Цена</th>
+            <th>Размер</th>
+            <th>Статус</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Items}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Brand}}</td>
+            <td>{{.Price}}</td>
+            <td>{{.Size}}</td>
+            <td><span class="badge">{{.Status}}</span></td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+
+<a href="/order" class="back-link">Вернуться к поиску</a>
+</body>
+</html>
