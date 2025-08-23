@@ -1,9 +1,16 @@
-package validator
+package validation
 
 import (
 	"WB_LVL_0_NEW/internal/domain/model"
 
+	"errors"
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
+)
+
+var (
+	ErrValidate = errors.New("error validate")
 )
 
 type OrderValidator struct {
@@ -16,5 +23,10 @@ func NewOrderValidator() *OrderValidator {
 }
 
 func (v *OrderValidator) Validate(order *model.Order) error {
-	return v.validate.Struct(order)
+	err := v.validate.Struct(order)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrValidate, err)
+	}
+
+	return nil
 }

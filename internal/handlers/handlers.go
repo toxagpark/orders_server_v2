@@ -1,9 +1,11 @@
-package http
+package handlers
 
 import (
 	"WB_LVL_0_NEW/internal/domain/model"
 	"WB_LVL_0_NEW/internal/domain/services"
 	"context"
+	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"time"
@@ -11,8 +13,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var (
+	ErrParse   = errors.New("error parse")
+	ErrExecute = errors.New("error execute")
+)
+
 type OrderHandler struct {
-	orderService *services.OrderService // Инжектим зависимость
+	orderService *services.OrderService
 }
 
 func NewOrderHandler(s *services.OrderService) *OrderHandler {
@@ -32,12 +39,12 @@ func (h *OrderHandler) CheckID(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	model, err := h.orderService.HandleOrderGet(ctx, orderID)
-	if err != nil {
+	if errors.Is(err, services.ErrOrderNotFound) {
 		notFound(w, r)
 		return
 	}
 
-	if err := renderOrder(w, model); err != nil {
+	if err := renderOrder(w, model); errors.Is(err, ErrExecute) || errors.Is(err, ErrParse) {
 		http.Error(w, "Error rendering page", http.StatusInternalServerError)
 	}
 
@@ -50,9 +57,12 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 func renderOrder(w http.ResponseWriter, order *model.Order) error {
 	tmpl, err := template.ParseFiles("static/templates/Info.html")
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", ErrParse, err)
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	return tmpl.Execute(w, order)
+	if err = tmpl.Execute(w, order); err != nil {
+		return fmt.Errorf("%w: %w", ErrExecute, err)
+	}
+	return nil
 }

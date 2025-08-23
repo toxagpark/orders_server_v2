@@ -2,23 +2,52 @@ package config
 
 import (
 	"WB_LVL_0_NEW/internal/domain/repository"
-	redisRepo "WB_LVL_0_NEW/internal/infrastructure/redis/repository"
+	"WB_LVL_0_NEW/internal/infrastructure/cache"
+
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
 )
 
-func NewRedis() (repository.CacheOrderRepository, error) {
+var (
+	ErrCacheCfg    = errors.New("error cache cfg")
+	ErrRedisClient = errors.New("error redis client")
+)
+
+type CacheConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
+func NewCacheConfig() (*CacheConfig, error) {
+	dbStr := os.Getenv("CACHE_DB")
+	db, err := strconv.Atoi(dbStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrCacheCfg, err)
+	}
+	return &CacheConfig{
+		Addr:     os.Getenv("CACHE_ADDRESS"),
+		Password: os.Getenv("CACHE_PASSWORD"),
+		DB:       db,
+	}, nil
+}
+
+func NewRedis(cfg *CacheConfig) (repository.CacheOrderRepository, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		DB:       cfg.DB,
 	})
 	ttl := 10 * time.Minute
 
 	_, err := client.Ping().Result()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrRedisClient, err)
 	}
-	return redisRepo.NewCacheOrderRepository(client, ttl), nil
+	return cache.NewCacheOrderRepository(client, ttl), nil
 }

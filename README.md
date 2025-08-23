@@ -1,37 +1,25 @@
-## 🚀 Быстрый старт
+# Orders Server
+Микросервис на GOLang с использованием PostgreSQL, Kafka, Redis
 
-### Предварительные требования
-    Выполнить миграции для БД(postgres)
-    --cd migrations
+## Описание
+Проект для хранения и отображения заказов. Пользователи могут узнать информацию о заказах по эндпоинту, сервер обрабатывает и сохраняет новые заказы.
 
-    Создайте .env файл в корне проекта:
-        # .env
-        DB_USER=postgres
-        DB_PASSWORD=your_secure_password_here
-        DB_HOST=localhost
-        DB_PORT=5432
-        DB_NAME=your_database_name
-        DB_SSLMODE=disable
+## Структура проекта
 
-    Создание:
-        migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}" up
-    Дроп:
-        migrate -path ./migrations \
-        -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}" \
-        drop
+- Redis для кеша
+- PostgreSQL для хранения заказов
+- Kafka для информации о новых заказах
 
-    Выполнить docker-compose
-    --cd docker
-    Поднять:
-        docker-compose up -d
-    Удалить
-        docker-compose down
+# Запуск
+Команды представлены в Makefile
 
-    Можно запускать проект
-    --go run cmd/app/main.go
+Собрать и проверить состояние без Makefile:
 
-### API
-    Ввод ID
-    http://localhost:8080/order
-    Информация о заказе
-    http://localhost:8080/order/{id}
+1. Собрать и запустить сервисы
+    ```bash
+   docker compose up -d 
+   ```
+2. Проверить состояние
+     ```bash
+   docker compose ps
+   ```

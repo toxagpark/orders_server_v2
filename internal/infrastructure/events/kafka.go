@@ -1,13 +1,19 @@
-package repository
+package events
 
 import (
 	"WB_LVL_0_NEW/internal/domain/model"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/IBM/sarama"
-	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator"
+)
+
+var (
+	ErrConsuming = errors.New("error consuming")
 )
 
 type simpleConsumer struct {
@@ -25,7 +31,7 @@ func NewSimpleConsumer(consumer sarama.Consumer, topic string) *simpleConsumer {
 func (c *simpleConsumer) StartConsuming(ctx context.Context, handler func(ctx context.Context, order model.Order) error) error {
 	pc, err := c.consumer.ConsumePartition(c.topic, 0, sarama.OffsetOldest)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", ErrConsuming, err)
 	}
 	defer pc.Close()
 
@@ -45,7 +51,9 @@ func (c *simpleConsumer) StartConsuming(ctx context.Context, handler func(ctx co
 				continue
 			}
 
-			handler(ctx, order)
+			if err = handler(ctx, order); err != nil {
+				log.Printf("handler err: %v", err)
+			}
 		case <-ctx.Done():
 			return nil
 		}

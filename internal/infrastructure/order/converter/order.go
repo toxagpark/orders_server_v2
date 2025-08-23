@@ -2,7 +2,7 @@ package converter
 
 import (
 	"WB_LVL_0_NEW/internal/domain/model"
-	"WB_LVL_0_NEW/internal/infrastructure/postgres/dto"
+	"WB_LVL_0_NEW/internal/infrastructure/order/dto"
 )
 
 func ToDomain(d dto.Order) model.Order {

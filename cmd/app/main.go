@@ -2,75 +2,87 @@ package main
 
 import (
 	"WB_LVL_0_NEW/internal/domain/services"
+	"WB_LVL_0_NEW/internal/handlers"
 	"WB_LVL_0_NEW/internal/infrastructure/config"
-	router "WB_LVL_0_NEW/internal/interfaces/http"
+	"WB_LVL_0_NEW/internal/infrastructure/events"
+
 	"context"
+	"errors"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
 func main() {
+	err := run()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	log.Println("Starting application...")
 
-	// Инициализация зависимостей
-	db, err := config.NewPostgresDB()
-	if err != nil {
-		log.Fatalf("Database error: %v", err)
+	// зависимости
+	db_cfg := config.LoadDBConfig()
+	db, err := config.NewPostgresClient(db_cfg)
+	if errors.Is(err, config.ErrPostgresClient) {
+		return err
 	}
 	defer db.Close()
 
-	cache, err := config.NewRedis()
-	if err != nil {
-		log.Fatalf("Redis error: %v", err)
+	cacheCfg, err := config.NewCacheConfig()
+	if errors.Is(err, config.ErrCacheCfg) {
+		return err
+	}
+	cache, err := config.NewRedis(cacheCfg)
+	if errors.Is(err, config.ErrRedisClient) {
+		return err
 	}
 	defer cache.Close()
 
-	// Создание сервиса
 	validator := config.NewValidate()
+
+	// Создание сервиса
 	service := services.NewOrderService(db, cache, validator)
 
 	// Настройка Kafka consumer
-	consumer, err := config.NewKafkaConfig().NewConsumer()
-	if err != nil {
-		log.Fatalf("Kafka error: %v", err)
+	consumer, err := config.NewEventsConfig().NewKafkaConsumer()
+	if errors.Is(err, config.ErrKafkaConsumer) {
+		return err
 	}
 
-	// Контекст для graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Запуск consumer в горутине
-	go func() {
-		if err := consumer.StartConsuming(ctx, service.HandleOrderCreated); err != nil {
-			log.Printf("Consumer error: %v", err)
-			cancel() // Инициируем shutdown при ошибке
-		}
-	}()
-
 	// HTTP сервер
-	router := router.NewRouter(service)
+	router := handlers.NewRouter(service)
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8081",
 		Handler: router.Router,
 	}
 
-	// Запуск сервера в горутине
+	// Контекст для graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	// Запуск consumer в горутине
 	go func() {
-		log.Println("Server listening on :8080")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error: %v", err)
-			cancel() // Инициируем shutdown при ошибке
+		if err := consumer.StartConsuming(ctx, service.HandleOrderCreated); errors.Is(err, events.ErrConsuming) {
+			log.Println(err)
+			stop()
 		}
 	}()
 
-	// Ожидание сигналов завершения
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop
+	// Запуск сервера в горутине
+	go func() {
+		log.Println("Server listening on :8081")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Println(err)
+			stop()
+		}
+	}()
+
+	// Ожидание сигнала завершения
+	<-ctx.Done()
 
 	log.Println("Shutting down gracefully...")
 
@@ -79,12 +91,9 @@ func main() {
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("Server shutdown error: %v", err)
+		log.Print(err)
 	}
 
-	// Отмена контекста остановит consumer
-	cancel()
-	time.Sleep(time.Second * 5)
-
 	log.Println("Application stopped")
+	return nil
 }

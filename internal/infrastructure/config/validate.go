@@ -2,9 +2,9 @@ package config
 
 import (
 	"WB_LVL_0_NEW/internal/domain/repository"
-	infra "WB_LVL_0_NEW/internal/infrastructure/validator"
+	"WB_LVL_0_NEW/internal/infrastructure/validation"
 )
 
 func NewValidate() repository.OrderValidator {
-	return infra.NewOrderValidator()
+	return validation.NewOrderValidator()
 }

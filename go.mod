@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	github.com/IBM/sarama v1.45.2
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gorilla/mux v1.8.1
@@ -45,4 +46,5 @@ require (
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )

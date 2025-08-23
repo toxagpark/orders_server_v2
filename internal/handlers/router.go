@@ -1,4 +1,4 @@
-package http
+package handlers
 
 import (
 	"WB_LVL_0_NEW/internal/domain/services"
