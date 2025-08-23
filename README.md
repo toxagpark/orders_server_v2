@@ -13,7 +13,7 @@
 # Запуск
 Команды представлены в Makefile
 
-Собрать и проверить состояние без Makefile:
+Собрать и проверить состояние, вызвать Kafka продюссера без Makefile:
 
 1. Собрать и запустить сервисы
     ```bash
@@ -23,3 +23,7 @@
      ```bash
    docker compose ps
    ```
+3. Режим продюсера для Kafka
+    ```bash
+  docker exec kafka opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic orders
+  ```

@@ -24,6 +24,9 @@ redis-logs:
 kafka-logs:
 	docker-compose logs -f kafka
 
+kafka-console-producer:
+	docker exec kafka opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic orders
+
 logs:
 	docker-compose logs -f
 
